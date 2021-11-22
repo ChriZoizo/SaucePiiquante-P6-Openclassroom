@@ -1,15 +1,16 @@
 const express = require('express')
-const mongoose = require('mongoose')
-const bodyParser = require('body-parser')
 const app = express()
+const mongoose = require('mongoose')
+const path = require('path')
+const dotenv = require('dotenv')
 
-
-/* Importation puis enregistrement du routeur */
+/* Importation/enregistrement des routeur */
 const userRoutes = require('../backend/routes/user')
-app.use('/api/auth', userRoutes)
+const sauceRoutes = require('../backend/routes/sauce')
 
+dotenv.config()
 
-/* Connection a la BDD Mongo */
+/* Connection a la BDD MongoDB */
 mongoose
   .connect(
     'mongodb+srv://christopher:Freedom@cluster0.nwitx.mongodb.net/piiquanteDB?retryWrites=true&w=majority',
@@ -19,12 +20,7 @@ mongoose
   .catch(() => console.log('Connexion à MongoDB échouée !'))
 
 
-
-
-
-
-
-  /* Regler le probleme de cross origine */
+/* Regler le probleme de cross origine */
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader(
@@ -38,9 +34,12 @@ app.use((req, res, next) => {
   next()
 })
 
-/* requete de test*/
-app.use((req, res, next) => {
-    res.json({ message : "REQUETE REçUS !"})
-})
+
+app.use(express.json()) /* Equivalent Body-Parser */
+
+app.use('/images', express.static(path.join(__dirname, 'images')))
+
+app.use('/api/sauce', sauceRoutes)
+app.use('/api/auth', userRoutes)
 
 module.exports = app
