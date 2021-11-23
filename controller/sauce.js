@@ -51,8 +51,8 @@ exports.modifySauce = (req, res, next) => {
     /* Puis on cherche l'objet initial dans la BDD pour effecaer l'image 'lié' */
     Sauce.findOne({ _id: req.params.id }) 
       .then(sauce => {
-        const filename = sauce.imageUrl.split('/images/')[1]
-        fs.unlink('images/' + filename, function () {}) /* Efface le fichier */
+        const fileName = sauce.imageUrl.split('/images/')[1]
+        fs.unlink('images/' + fileName, function () {}) /* Efface le fichier */
       })
       .catch(error => res.status(500).json({ error }))
   } else { /* Si pas d'image dans la requete */
@@ -64,6 +64,16 @@ exports.modifySauce = (req, res, next) => {
     .catch(error => res.status(400).json({ error }))
 }
 
-exports.deleteSauce = (req, res, next) => {}
+exports.deleteSauce = (req, res, next) => {
+  Sauce.findOne({ _id: req.params.id})
+  .then(sauce => {
+    const fileName = sauce.imageUrl.split('/images/')[1]
+    fs.unlink('images/' + fileName, function() {
+      Sauce.deleteOne({ _id: sauce.id})
+      .then(() => res.status(200).json({ message : "Sauce Supprimé !"}))
+      .catch(error => res.status(400).json({ error}))
+    })
+  })
+}
 
 exports.likeSauce = (req, res, next) => {}
