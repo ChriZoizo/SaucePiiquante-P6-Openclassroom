@@ -2,6 +2,7 @@
 
 const Sauce = require('../models/sauce')
 const fs = require('fs')
+
 /* Fonction qui renvoie tout les sauces de la BDD */
 exports.getAllSauces = (req, res, next) => {
   Sauce.find()
@@ -42,20 +43,22 @@ exports.modifySauce = (req, res, next) => {
   let newSauce = {} /* Variable qui contiendras l'objet a sauvegarder */
   if (req.file) {
     /* Si la requete contiens un fichier */
-    newSauce = { /* On recupere le body de la requpete, on le parse et on modifie la valeur d''imageUrl'  */
+    newSauce = {
+      /* On recupere le body de la requpete, on le parse et on modifie la valeur d''imageUrl'  */
       ...JSON.parse(req.body.sauce),
       imageUrl: `${req.protocol}://${req.get('host')}/images/${
         req.file.filename
       }`
     }
     /* Puis on cherche l'objet initial dans la BDD pour effecaer l'image 'lié' */
-    Sauce.findOne({ _id: req.params.id }) 
+    Sauce.findOne({ _id: req.params.id })
       .then(sauce => {
         const fileName = sauce.imageUrl.split('/images/')[1]
         fs.unlink('images/' + fileName, function () {}) /* Efface le fichier */
       })
       .catch(error => res.status(500).json({ error }))
-  } else { /* Si pas d'image dans la requete */
+  } else {
+    /* Si pas d'image dans la requete */
     newSauce = { ...req.body } /* Assigne le body en entier */
   }
   /* Modification de la sauce */
@@ -65,15 +68,16 @@ exports.modifySauce = (req, res, next) => {
 }
 
 exports.deleteSauce = (req, res, next) => {
-  Sauce.findOne({ _id: req.params.id})
+  Sauce.findOne({ _id: req.params.id })
   .then(sauce => {
     const fileName = sauce.imageUrl.split('/images/')[1]
-    fs.unlink('images/' + fileName, function() {
-      Sauce.deleteOne({ _id: sauce.id})
-      .then(() => res.status(200).json({ message : "Sauce Supprimé !"}))
-      .catch(error => res.status(400).json({ error}))
+    fs.unlink('images/' + fileName, function () {
+      Sauce.deleteOne({ _id: sauce.id })
+        .then(() => res.status(200).json({ message: 'Sauce Supprimé !' }))
+        .catch(error => res.status(400).json({ error }))
     })
   })
+  .catch(error => res.status(500).json({ error }))
 }
 
 exports.likeSauce = (req, res, next) => {}
