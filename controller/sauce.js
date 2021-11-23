@@ -2,7 +2,7 @@
 
 const Sauce = require('../models/sauce');
 const fs = require('fs');
-
+/* Fonction qui renvoie tout les sauces de la BDD */
 exports.getAllSauces = (req, res, next) => {
   Sauce.find()
     .then(sauce => res.status(200).json(sauce))
