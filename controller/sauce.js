@@ -1,9 +1,11 @@
+'use strict';
+
 const Sauce = require('../models/sauce');
 const fs = require('fs');
 
 exports.getAllSauces = (req, res, next) => {
   Sauce.find()
-    .then(sauce => res.status(200).json(sauces))
+    .then(sauce => res.status(200).json(sauce))
     .catch(error => res.status(400).json({ error }))
 };
 
@@ -16,7 +18,7 @@ exports.getOneSauce = (req, res, next) => {
 exports.createSauce = (req, res, next) => {
   console.log(req.body)
   const sauceObject = JSON.parse(req.body.sauce)
-  console.log(sauceObjet)
+  console.log(sauceObject)
   delete sauceObject._id
   const sauce = new Sauce({
     ...sauceObject,
