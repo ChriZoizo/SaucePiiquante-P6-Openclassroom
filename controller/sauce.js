@@ -69,15 +69,53 @@ exports.modifySauce = (req, res, next) => {
 
 exports.deleteSauce = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id })
-  .then(sauce => {
-    const fileName = sauce.imageUrl.split('/images/')[1]
-    fs.unlink('images/' + fileName, function () {
-      Sauce.deleteOne({ _id: sauce.id })
-        .then(() => res.status(200).json({ message: 'Sauce Supprimé !' }))
-        .catch(error => res.status(400).json({ error }))
+    .then(sauce => {
+      const fileName = sauce.imageUrl.split('/images/')[1]
+      fs.unlink('images/' + fileName, function () {
+        Sauce.deleteOne({ _id: sauce.id })
+          .then(() => res.status(200).json({ message: 'Sauce Supprimé !' }))
+          .catch(error => res.status(400).json({ error }))
+      })
     })
-  })
-  .catch(error => res.status(500).json({ error }))
+    .catch(error => res.status(500).json({ error }))
 }
 
-exports.likeSauce = (req, res, next) => {}
+exports.likeOrDislikeSauce = (req, res, next) => {
+    Sauce.findOne({ _id: req.params.id })
+        .then(sauce => {
+
+            if (req.body.like == 1) {
+                if (!sauce.usersLiked.includes(req.body.userId)) {
+                    sauce.likes = sauce.likes + 1;
+                    sauce.usersLiked.push(req.body.userId);
+                }
+            }
+
+            if (req.body.like == -1) {
+                if (!sauce.usersDisliked.includes(req.body.userId)) {
+                    sauce.dislikes = sauce.dislikes + 1;
+                    sauce.usersDisliked.push(req.body.userId);
+                }
+            }
+            
+            if (req.body.like == 0) {
+                if (sauce.usersLiked.includes(req.body.userId)) {
+                    sauce.likes = sauce.likes - 1;
+                    let index = sauce.usersLiked.indexOf(req.body.userId);
+                    sauce.usersLiked.splice(index, 1);
+                }
+                if (sauce.usersDisliked.includes(req.body.userId)) {
+                    sauce.dislikes = sauce.dislikes - 1;
+                    let index = sauce.usersDisliked.indexOf(req.body.userId);
+                    sauce.usersDisliked.splice(index, 1);
+                }
+            }
+
+            sauce.save()
+
+            res.status(200).json({ message: 'Updated ! ' })
+
+        })
+    
+        .catch(error => res.status(500).json({ error }));
+};
