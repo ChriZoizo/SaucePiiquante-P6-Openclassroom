@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 
+/* Schema de l'objet 'sauce' pour la collection 'Sauce' */
 const sauceSchema = mongoose.Schema({
   userId: { type: String, required: true },
   name: { type: String, required: true },
@@ -13,5 +14,5 @@ const sauceSchema = mongoose.Schema({
   usersLiked: { type : [String], required: true },
   usersDisliked: { type : [String], required: true }
 })
-
+ /* Exportation du schema */
 module.exports = mongoose.model('Sauce', sauceSchema)

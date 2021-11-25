@@ -1,6 +1,10 @@
+/* Importation des modules */
 const http = require('http');
 const app = require('./app');
 
+/* Fonction permettant de renvoyer un numero de port valide.
+Prend un chiffre en paramétres (String ou Number) et renvoie un Number.
+Si autre chose en paramétre, renvoi "False" */
 const normalizePort = val => {
   const port = parseInt(val, 10);
 
@@ -12,9 +16,15 @@ const normalizePort = val => {
   }
   return false;
 };
+/* Definition de la variable port grace a la fonction normalizePort ci-dessus */
 const port = normalizePort(process.env.PORT || '3000');
+
+/* Parametrage du port du serveur */
 app.set('port', port);
 
+
+/* Fonction permettant de rechercher les differentes erreurs et les gére de maniére appropriée.
+Puis les envois au serveur */
 const errorHandler = error => {
   if (error.syscall !== 'listen') {
     throw error;
@@ -35,8 +45,10 @@ const errorHandler = error => {
   }
 };
 
+/* Creation du serveur */
 const server = http.createServer(app);
 
+/* Ecouteurs d'evenements */
 server.on('error', errorHandler);
 server.on('listening', () => {
   const address = server.address();
