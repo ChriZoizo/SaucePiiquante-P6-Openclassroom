@@ -1,22 +1,8 @@
 const jwt = require('jsonwebtoken')
 
-/* Middleware qui verifie le token du User connecté. Le token est extrais du header de la req.
-NOTE
 
-nous extrayons le token du header Authorization de la requête entrante. N'oubliez pas qu'il contiendra également le mot-clé Bearer . 
-Nous utilisons donc la fonction split pour récupérer tout après l'espace dans le header. Les erreurs générées ici s'afficheront dans
- le bloc catch ;
 
-nous utilisons ensuite la fonction verify pour décoder notre token. Si celui-ci n'est pas valide, une erreur sera générée ;
-
-nous extrayons l'ID utilisateur de notre token ;
-
-si la demande contient un ID utilisateur, nous le comparons à celui extrait du token. S'ils sont différents, nous générons une erreur ;
-
-dans le cas contraire, tout fonctionne et notre utilisateur est authentifié. Nous passons l'exécution à l'aide de la fonction next() .
-  */ 
-
-/* Fonction permettant de verifier le token de l'utilisateur connecté.
+/* Midlleware permettant de verifier le token de l'utilisateur connecté.
 Elle recupére le token dans le header de la requête, le decode et verifie sa validité 
 puis le compare avec celui contenus dans la requête. Si ils sont identiques, la requetes n'est pas arretée.
 Si ils sont differents, renvois une erreurs.

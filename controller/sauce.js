@@ -9,7 +9,10 @@ exports.getAllSauces = (req, res, next) => {
     .catch(error => res.status(400).json({ error }))
 }
 
-/* Fonction qui renvoie une seul sauce de la BDD via son ID */
+/* Fonction qui renvoie une seul sauce de la BDD via son ID 
+> request params = 
+{id: String}
+  */
 exports.getOneSauce = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id })
     .then(sauce => res.status(200).json(sauce))
@@ -17,12 +20,22 @@ exports.getOneSauce = (req, res, next) => {
 }
 
 /* Fonction pour créer 'sauce'. 
-recupere dans le corps de la requete l'objet 'sauce' et le parse puis créer un nouvel objet 'Sauce' avec
-le schema 'sauce'. Lors de la création, definis l'url de l'image grace a "Multer" et/ou "Path"     (!!!!!!!!!!!!)
-et initialise les champs-compteur et tableaux de likes/dislikes*/
+Recupere dans le corps de la requete l'objet 'sauce' et le parse, puis créer un nouvel objet 'Sauce' avec
+le schema 'sauce'. Lors de la création, definis l'url de l'image grace a "Multer" et/ou "Path" (?! voir avec Raoul))
+et initialise les valeur-compteur et tableaux de likes/dislikes 
+> request body = {
+name = String,
+manufacturer = String,
+descritpion = String,
+mainpepper = String,
+heat = Number,
+userId = String}
+request file = {
+  fichier image
+}
+  */
 exports.createSauce = (req, res, next) => {
   const sauceObject = JSON.parse(req.body.sauce)
-  /*   delete sauceObject._id */
   /* Création de l'objet Sauce */
   const sauce = new Sauce({
     ...sauceObject,
@@ -30,7 +43,7 @@ exports.createSauce = (req, res, next) => {
     imageUrl: `${req.protocol}://${req.get('host')}/images/${
       req.file.filename
     }`,
-    /* declaration des compteurs et tableaux de likes/dislikes */
+    /* definition des compteurs et tableaux de likes/dislikes */
     likes: 0,
     dislikes: 0,
     usersLiked: '',
@@ -43,24 +56,38 @@ exports.createSauce = (req, res, next) => {
     .catch(error => res.status(400).json({ error }))
 }
 
-/* fonction pour modifier une sauce. Si une image est detecté dans la requête, efface l'ancienne image du dossier statique,
+/* fonction pour modifier une sauce. 
+-Si une image est detecté dans la requête, efface l'ancienne image du dossier statique,
 parametre un nouvel 'imageUrl' en fonction du nouveau fichier puis modifie les modifications via 'updateOne()'.
-Sinon sauvegarde la modification le body de la requête tel quel via 'updateOne'.*/
+-Sinon sauvegarde la modification le body de la requête tel quel via 'updateOne'.
+> request params = { id = String}
+> request body = {
+name = String,
+manufacturer = String,
+descritpion = String,
+mainpepper = String,
+heat = Number,
+userId = String}
+request file = {
+  fichier image
+}*/
 exports.modifySauce = (req, res, next) => {
   let newSauce = {} /* Variable qui contiendras l'objet a sauvegarder */
-  /* Si la requete contiens un fichier */
+  /* Si la requete contiens un fichier image */
   if (req.file) {
-    /* Nouvel Objet a partir du corp de requete  et 'imageUrl' definis en fonctions du noms de fichier */
+    /* enregistre le corp de requete,  et 'imageUrl' redefinis en fonctions du noms de fichier */
     newSauce = {
       ...JSON.parse(req.body.sauce),
       imageUrl: `${req.protocol}://${req.get('host')}/images/${
         req.file.filename
       }`
     }
-    /* Puis on cherche l'objet initial dans la BDD pour effecaer l'image 'lié' du dossier statique */
+    /* Cherche l'objet initial dans la BDD pour effacer l'image 'lié' du dossier statique */
     Sauce.findOne({ _id: req.params.id })
       .then(sauce => {
-        const fileName = sauce.imageUrl.split('/images/')[1] /* recupere le nom original du fichier image */
+        const fileName = sauce.imageUrl.split(
+          '/images/'
+        )[1] /* recupere le nom original du fichier image */
         fs.unlink('images/' + fileName, function () {}) /* Efface le fichier */
       })
       .catch(error => res.status(500).json({ error }))
@@ -74,42 +101,71 @@ exports.modifySauce = (req, res, next) => {
     .catch(error => res.status(400).json({ error }))
 }
 
-
+/* Fonction pour effacer une 'sauce' via son '_id'.
+l'id recherché est recuperer dans les params de la requête. Si une correspoondance dans la BDD est trouvé,
+délie puis efface l'image de la 'sauce' puis, via la methode 'deleteOne', efface l'objet de la BDD
+> request params = { id = String}*/
 exports.deleteSauce = (req, res, next) => {
-  Sauce.findOne({ _id: req.params.id })
+  Sauce.findOne({ _id: req.params.id }) /* recherche avec l'id du req.params */
     .then(sauce => {
+      /* Recupere le nom original du fichier images joint */
       const fileName = sauce.imageUrl.split('/images/')[1]
+      /* Suppression de l'image du dossier statique */
       fs.unlink('images/' + fileName, function () {
+        /* Suppression de la 'sauce' de la BDD (Promise)*/
         Sauce.deleteOne({ _id: sauce.id })
-          .then(() => res.status(200).json({ message: 'Sauce Supprimé !' }))
+          .then(() =>
+            res.status(200).json({ message: 'Sauce Supprimé !' })
+          ) /* Element 'sauce' supprimé */
           .catch(error => res.status(400).json({ error }))
       })
     })
     .catch(error => res.status(500).json({ error }))
 }
 
+/* Fonction pour liké/disliké les 'sauces'.
+Recherche la sauce concerné via un '_id' recuperé des params de la requête. Le cas échéant,
+analyse la valeur 'like' du body de la requête.
+-Si 1 : verifie que le 'userId' n'est pas deja inscrit dans le tableau 'userLiked', si absent, augmente la valeur 'like' 
+de la sauce de 1 et ajoute le 'userId' dans le tableau concerné.
+-Si -1 : verifie que le 'userId' n'est pas deja inscrit dans le tableau 'userDisliked' , si absent, augmente la valeur 'dislike' 
+de la sauce de 1 et ajoute le 'userId' dans le tableau concerné.
+-Si 0: Verifie dans quel tableau le 'userId' est inscrit. Une fois trouvé, efface le 'userId' puis ajuste la valeur 'like' de la sauce en consequence.
+>>> !!! Les verifications d'inscription dans les tableaux sont superflu car le frontend empeche deja certaines erreurs. Neanmoins, par soucis
+de securité, des verification du controlleur ont ete implémentés !!! <<<
+> request params = { id = String}
+> request body = { 
+  like = Number
+  userId = String}
+*/
 exports.likeOrDislikeSauce = (req, res, next) => {
-  Sauce.findOne({ _id: req.params.id })
+  Sauce.findOne({ _id: req.params.id }) /* recherche la 'sauce' */
     .then(sauce => {
+      /* Si like = 1 et que 'userId' est dans le tableau 'userLiked'*/
       if (req.body.like == 1) {
         if (!sauce.usersLiked.includes(req.body.userId)) {
+          /* augmente la valeur de 'likes' de la 'sauce' de 1 */
           sauce.likes = sauce.likes + 1
+          /* enregistre le 'userId' dans le tableur 'userLiked' */
           sauce.usersLiked.push(req.body.userId)
         }
       }
-
+      /* Si like = -1 et que 'userId' est dans le tableau 'userDisliked'*/
       if (req.body.like == -1) {
         if (!sauce.usersDisliked.includes(req.body.userId)) {
+          /* augmente la valeur de 'dislikes' de la 'sauce' de 1 */
           sauce.dislikes = sauce.dislikes + 1
+          /* enregistre le 'userId' dans le tableur 'userDisliked' */
           sauce.usersDisliked.push(req.body.userId)
         }
       }
-
+      /* Si like = 0 */
       if (req.body.like == 0) {
+        /* si le userId est dans le tableau 'userLiker' */
         if (sauce.usersLiked.includes(req.body.userId)) {
-          sauce.likes = sauce.likes - 1
-          let index = sauce.usersLiked.indexOf(req.body.userId)
-          sauce.usersLiked.splice(index, 1)
+          sauce.likes = sauce.likes - 1 /* Ajuste la valeur 'like'*/
+          let index = sauce.usersLiked.indexOf(req.body.userId) /* Cherche l'index du userId dans le tableau */
+          sauce.usersLiked.splice(index, 1) /* Efface le 'userId' */
         }
         if (sauce.usersDisliked.includes(req.body.userId)) {
           sauce.dislikes = sauce.dislikes - 1
