@@ -21,5 +21,6 @@ const storage = multer.diskStorage({
     }
 })
 
-/* exportation des fonctions */
+/* exportation des fonctions 
+Contenant aussi la fonction pour enregistrer l'image dans le dossier images*/
 module.exports = multer({storage: storage}).single('image')
