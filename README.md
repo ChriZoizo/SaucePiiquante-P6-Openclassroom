@@ -13,17 +13,17 @@ L'application necessite certaines "dependances"
 
 ## Installation
 
-Une fois le telechargement effectué, placez-vous dans le dossier du projet puis faites
+Une fois le telechargement effectué, placez-vous dans le dossier 'backend' puis faites :
 
 
--Pour installer les modules necessaires
+- Pour installer les modules necessaires
 ```bash
 npm install 
 ```
 
--Puis connectez une base de données Mongo.DB en et mettez l'url (fichier "app.js" ligne 18)
+- Puis connectez une base de données Mongo.DB en et mettez l'url (fichier "app.js" ligne 18)
 
-Puis :
+- Puis :
 ```
 nodemon server
 ```
