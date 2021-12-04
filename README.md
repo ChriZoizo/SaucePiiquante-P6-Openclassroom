@@ -35,6 +35,8 @@ Pour arreter le serveur, utilisez CTRL + C dans votre terminal
 
 ### API
 
+TOUTES les routes necessite d'etre authentifié 
+
 Voici quelques indication sur l'API
 
 - POST (/api/auth/signup) = signup user

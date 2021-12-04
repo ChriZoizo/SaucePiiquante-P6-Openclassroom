@@ -9,12 +9,12 @@ const saucesCtrl = require('../controller/sauce')
 
 /* Parametrage des routes/points d'arrêts et fonctions du controlleurs liés. 
 "Authorize" est ajouté (auth) a toutes les routes */
-router.post('/', auth, multer, saucesCtrl.createSauce)
-router.get('/', auth, saucesCtrl.getAllSauces)
-router.get('/:id', auth, saucesCtrl.getOneSauce)
-router.put('/:id', auth, multer, saucesCtrl.modifySauce)
-router.delete('/:id', auth, multer, saucesCtrl.deleteSauce)
-router.post('/:id/like', auth, multer, saucesCtrl.likeOrDislikeSauce)
+router.post('/', multer, saucesCtrl.createSauce)
+router.get('/', saucesCtrl.getAllSauces)
+router.get('/:id', saucesCtrl.getOneSauce)
+router.put('/:id', multer, saucesCtrl.modifySauce)
+router.delete('/:id', multer, saucesCtrl.deleteSauce)
+router.post('/:id/like', multer, saucesCtrl.likeOrDislikeSauce)
 
 /* Export du routeur et de ses fonctions */
 module.exports = router

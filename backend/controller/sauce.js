@@ -1,6 +1,7 @@
 /* Importation des modules */
 const Sauce = require('../models/sauce')
 const fs = require('fs')
+const jwt = require('jsonwebtoken')
 
 /* Fonction qui renvoie tout les sauces de la BDD */
 exports.getAllSauces = (req, res, next) => {
@@ -56,10 +57,13 @@ exports.createSauce = (req, res, next) => {
     .catch(error => res.status(400).json({ error }))
 }
 
-/* fonction pour modifier une sauce. 
--Si une image est detecté dans la requête, efface l'ancienne image du dossier statique,
+/* fonction pour modifier une sauce , verifie aussi la concordance des 'userId'
+cherche la sauce via son ID:
+  -SI le 'userId' present dans le token d'authentification est le meme que celui de la sauce a modifié
+    -Si une image est detecté dans la requête, efface l'ancienne image du dossier statique,
 parametre un nouvel 'imageUrl' en fonction du nouveau fichier puis modifie les modifications via 'updateOne()'.
--Sinon sauvegarde la modification le body de la requête tel quel via 'updateOne'.
+    -Sinon sauvegarde la modification le body de la requête tel quel via 'updateOne'.
+  -SINON renvoie une erreur 403 avec un message
 > request params = { id = String}
 > request body = {
 name = String,
@@ -72,35 +76,51 @@ request file = {
   fichier image
 }*/
 exports.modifySauce = (req, res, next) => {
-  let newSauce = {} /* Variable qui contiendras l'objet a sauvegarder */
-  /* Si la requete contiens un fichier image */
-  if (req.file) {
-    /* enregistre le corp de requete,  et 'imageUrl' redefinis en fonctions du noms de fichier */
-    newSauce = {
-      ...JSON.parse(req.body.sauce),
-      imageUrl: `${req.protocol}://${req.get('host')}/images/${
-        req.file.filename
-      }`
-    }
-    /* Cherche l'objet initial dans la BDD pour effacer l'image 'lié' du dossier statique */
-    Sauce.findOne({ _id: req.params.id })
-      .then(sauce => {
-        const fileName = sauce.imageUrl.split(
-          '/images/'
-        )[1] /* recupere le nom original du fichier image */
-        fs.unlink('images/' + fileName, function () {}) /* Efface le fichier */
-      })
-      .catch(error => res.status(500).json({ error }))
-  } else {
-    /* Si pas d'image dans la requete */
-    newSauce = { ...req.body } /* Assigne le body tel quel */
-  }
-  /* Enregistre les modifications */
-  Sauce.updateOne({ _id: req.params.id }, { ...newSauce, _id: req.params.id })
-    .then(() => res.status(200).json({ message: 'Sauce modifiée !' }))
-    .catch(error => res.status(400).json({ error }))
-}
+  Sauce.findOne({ _id: req.params.id }) /* Cherche la sauce via l'id present dans les params de la requete */
+    .then(sauce => {  
+      const token = req.headers.authorization.split(' ')[1] /* Recupere le token d'auth present dans le header de la req */
+      const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET') /* decode et verifie l'integrité du token et enregistre l'objet retourné */
+      const userId = decodedToken.userId /* recupere le userID de l'objet JSON retourné par verify() */
+      /* SI le userID du token est identique au "userID" du createur de la sauce, execute le code */
+      if (sauce.userId == userId) {
+        console.log(req)
+        let newSauce = {} /* Variable qui contiendras l'objet a sauvegarder */
+        /* Si la requete contiens un fichier image */
+        if (req.file) {
+          /* enregistre le corp de requete,  et 'imageUrl' redefinis en fonctions du noms de fichier */
+          newSauce = {
+            ...JSON.parse(req.body.sauce),
+            imageUrl: `${req.protocol}://${req.get('host')}/images/${
+              req.file.filename
+            }`
+          }
+          /* Cherche l'objet initial dans la BDD pour effacer l'image 'lié' du dossier statique */
 
+          const fileName = sauce.imageUrl.split(
+            '/images/'
+          )[1] /* recupere le nom original du fichier image */
+          fs.unlink(
+            'images/' + fileName,
+            function () {}
+          ) /* Efface le fichier */
+        } else {
+          /* Si pas d'image dans la requete */
+          newSauce = { ...req.body } /* Assigne le body tel quel */
+        }
+        /* Enregistre les modifications */
+        Sauce.updateOne(
+          { _id: req.params.id },
+          { ...newSauce, _id: req.params.id }
+        )
+          .then(() => res.status(200).json({ message: 'Sauce modifiée !' })) /* requete resolus */
+          .catch(error => res.status(400).json({ error })) /* message en cas d'erreur */
+          /* Si le 'userID' du token n'est aps celui du createur de la sauce */
+      } else {
+        res.status(403).json({ message: '403: unauthorized request' }) /* renvoie un erreur 403 et un message specifique */
+      }
+    })
+    .catch(error => res.status(500).json({ error })) /* en cas d'erreur serveur et/ou BDD */
+}
 /* Fonction pour effacer une 'sauce' via son '_id'.
 l'id recherché est recuperer dans les params de la requête. Si une correspoondance dans la BDD est trouvé,
 délie puis efface l'image de la 'sauce' puis, via la methode 'deleteOne', efface l'objet de la BDD
@@ -164,7 +184,9 @@ exports.likeOrDislikeSauce = (req, res, next) => {
         /* si le userId est dans le tableau 'userLiker' */
         if (sauce.usersLiked.includes(req.body.userId)) {
           sauce.likes = sauce.likes - 1 /* Ajuste la valeur 'like'*/
-          let index = sauce.usersLiked.indexOf(req.body.userId) /* Cherche l'index du userId dans le tableau */
+          let index = sauce.usersLiked.indexOf(
+            req.body.userId
+          ) /* Cherche l'index du userId dans le tableau */
           sauce.usersLiked.splice(index, 1) /* Efface le 'userId' */
         }
         if (sauce.usersDisliked.includes(req.body.userId)) {
