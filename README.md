@@ -1,5 +1,7 @@
 # Projet 6 - Piiquante
 
+
+
 Ceci est une application créé dans le cadre de la formation "Developpeur Web" d'OpenClassrooms.
 Créé avec Express, Node.js et MongoDB.
 
@@ -51,5 +53,5 @@ Voici quelques indication sur l'API
 
 Pour plus de precisions, consultez la page 2 et 3 de ce document
 
-
+PS: Traduction anglaise, encore...
 
